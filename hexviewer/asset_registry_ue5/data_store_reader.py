@@ -187,17 +187,19 @@ class DataStore:
 
         byte_offset = 0
         for entry in self.ansi_strings:
+            entry_out = entry + "\x00"
             ansi_offsets.append(byte_offset)
-            ansi_concatenated += entry + "\x00"
-            byte_offset += len(entry) * 1
+            ansi_concatenated += entry_out
+            byte_offset += (len(entry_out)) * 1
 
         logger.debug(f"Largest ANSI offset: {byte_offset}")
 
         byte_offset = 0
         for entry in self.wide_strings:
+            entry_out = entry + "\x00"
             wide_offsets.append(byte_offset)
-            wide_concatenated += entry + "\x00"
-            byte_offset += len(entry) * 2
+            wide_concatenated += entry_out
+            byte_offset += (len(entry_out)) * 2
 
         logger.debug(f"Largest WIDE offset: {byte_offset}")
 

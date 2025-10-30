@@ -4,6 +4,9 @@ import sys
 from itertools import batched
 from logging import DEBUG
 from pathlib import Path
+
+import click
+
 from hexviewer.asset_registry_ue5.binary_conversion.read_binary_file import asset_registry_from_file
 from hexviewer.asset_registry_ue5.binary_conversion.write_binary_file import asset_registry_to_binary_file
 from hexviewer.asset_registry_ue5.json_conversion.make_editable_json import make_editable_json
@@ -11,13 +14,30 @@ from hexviewer.asset_registry_ue5.json_conversion.read_editable_json import load
 from hexviewer.asset_registry_ue5.readers.binary_reader import BinaryReader
 from hexviewer.asset_registry_ue5.readers.binary_writer import BinaryWriter
 
+@click.command(
+    "bin_to_json",
+    help="Converts the specified binary file into editable json."
+)
+@click.argument(
+    "input_file",
+    type=click.Path(exists=True, dir_okay=False, file_okay=True, readable=True, resolve_path=True, path_type=Path),
+)
+@click.option(
+    "output_path",
+    "--output",
+    "-o",
+    type=click.Path(exists=False, dir_okay=False, file_okay=True, writable=True, resolve_path=True, path_type=Path),
+    default=None
+)
+def registry_bin_to_json(input_file: Path, output_path: Path | None, file_byte_order=sys.byteorder):
+    if output_path is None:
+        output_path = input_file.with_stem(input_file.stem + "_parsed").with_suffix(".json")
 
-def registry_bin_to_json(registry_file: Path, registry_out: Path, file_byte_order=sys.byteorder):
-    with registry_file.open("rb") as reader:
+    with input_file.open("rb") as reader:
         binaries = BinaryReader(reader, file_byte_order)
         registry = asset_registry_from_file(binaries)
 
-    with registry_out.open("w") as writer:
+    with output_path.open("w") as writer:
         writer.write(
             json.dumps(make_editable_json(registry), indent=2)
         )
@@ -31,8 +51,26 @@ def load_write_json_test(input_json: Path, output_path: Path):
             json.dumps(make_editable_json(registry), indent=2)
         )
 
-def registry_json_to_bin(input_json: Path, output_path: Path, file_byte_order=sys.byteorder):
-    with input_json.open("r") as reader:
+@click.command(
+    "json_to_bin",
+    help="Converts the specified json file into a binary file."
+)
+@click.argument(
+    "input_file",
+    type=click.Path(exists=True, dir_okay=False, file_okay=True, readable=True, resolve_path=True, path_type=Path),
+)
+@click.option(
+    "output_path",
+    "--output",
+    "-o",
+    type=click.Path(exists=False, dir_okay=False, file_okay=True, writable=True, resolve_path=True, path_type=Path),
+    default=None
+)
+def registry_json_to_bin(input_file: Path, output_path: Path | None, file_byte_order=sys.byteorder):
+    if output_path is None:
+        output_path = input_file.with_stem(input_file.stem + "_encoded").with_suffix(".bin")
+
+    with input_file.open("r") as reader:
         registry = load_registry_from_json(json.load(reader))
 
     with output_path.open("wb") as writer:
@@ -49,27 +87,4 @@ def load_write_bin_test(input_file: Path, output_path: Path, file_byte_order=sys
         binaries = BinaryWriter(writer, file_byte_order)
         asset_registry_to_binary_file(registry, binaries)
 
-
-
-BYTES_PER_LINE = 8
-def show_hex(registry_file: Path, n, offset = 0, ):
-    with registry_file.open("rb") as reader:
-        reader.seek(offset)
-        byte_data = reader.read(n)
-
-        for batch in batched(byte_data, BYTES_PER_LINE):
-            print("  ".join([f"{b:02x}" for b in batch]) + "\n")
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=DEBUG)
-    reg_file = Path(r"F:\game extraction\FModel\Output\Exports\Remnant2\AssetRegistry.bin")
-    test_bin_rewrite = reg_file.with_stem("bin_registry_rewrite")
-
-    reg_json_file = reg_file.with_stem("parsed_registry").with_suffix(".json")
-    test_json_rewrite = reg_json_file.with_stem("parsed_load_write_test")
-
-    #registry_bin_to_json(reg_file, reg_json_file)
-    registry_json_to_bin(reg_json_file, test_bin_rewrite)
-    registry_bin_to_json(test_bin_rewrite, test_json_rewrite)
 

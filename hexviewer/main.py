@@ -1,5 +1,4 @@
 import logging
-from logging import DEBUG
 
 import click
 
@@ -23,7 +22,7 @@ def cli(verbosity: int):
         logging.INFO,
         logging.DEBUG
     ]
-    logger.parent.setLevel(debug_levels[min(verbosity, len(debug_levels)-1)])
+    logging.basicConfig(level=debug_levels[min(verbosity, len(debug_levels)-1)])
 
 
 cli.add_command(registry_bin_to_json)

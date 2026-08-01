@@ -1,0 +1,9 @@
+{
+	"Header": Header,
+	"State": {
+		"Assets": State.Assets[? contains(ChunkIds, `335566`) ],
+		"Dependencies": `[]`,
+		"Packages": `[]`,
+		"Options": State.Options
+	}
+}

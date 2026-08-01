@@ -1,8 +1,5 @@
 import json
-import logging
 import sys
-from itertools import batched
-from logging import DEBUG
 from pathlib import Path
 
 import click
@@ -11,6 +8,7 @@ from hexviewer.asset_registry_ue5.binary_conversion.read_binary_file import asse
 from hexviewer.asset_registry_ue5.binary_conversion.write_binary_file import asset_registry_to_binary_file
 from hexviewer.asset_registry_ue5.json_conversion.make_editable_json import make_editable_json
 from hexviewer.asset_registry_ue5.json_conversion.read_editable_json import load_registry_from_json
+from hexviewer.asset_registry_ue5.json_conversion.json_filter import apply_json_filter
 from hexviewer.asset_registry_ue5.readers.binary_reader import BinaryReader
 from hexviewer.asset_registry_ue5.readers.binary_writer import BinaryWriter
 
@@ -29,7 +27,13 @@ from hexviewer.asset_registry_ue5.readers.binary_writer import BinaryWriter
     type=click.Path(exists=False, dir_okay=False, file_okay=True, writable=True, resolve_path=True, path_type=Path),
     default=None
 )
-def registry_bin_to_json(input_file: Path, output_path: Path | None, file_byte_order=sys.byteorder):
+@click.option(
+    "json_filter",
+    "--filter",
+    type=click.Path(exists=True, dir_okay=False, file_okay=True, readable=True, resolve_path=True, path_type=Path),
+    default=None
+)
+def registry_bin_to_json(input_file: Path, output_path: Path | None, json_filter: Path | None, file_byte_order=sys.byteorder):
     if output_path is None:
         output_path = input_file.with_stem(input_file.stem + "_parsed").with_suffix(".json")
 
@@ -37,9 +41,13 @@ def registry_bin_to_json(input_file: Path, output_path: Path | None, file_byte_o
         binaries = BinaryReader(reader, file_byte_order)
         registry = asset_registry_from_file(binaries)
 
+    json_registry = make_editable_json(registry)
+    if json_filter:
+        json_registry = apply_json_filter(json_registry, json_filter)
+
     with output_path.open("w") as writer:
         writer.write(
-            json.dumps(make_editable_json(registry), indent=2)
+            json.dumps(json_registry, indent=2)
         )
 
 def load_write_json_test(input_json: Path, output_path: Path):
@@ -66,12 +74,21 @@ def load_write_json_test(input_json: Path, output_path: Path):
     type=click.Path(exists=False, dir_okay=False, file_okay=True, writable=True, resolve_path=True, path_type=Path),
     default=None
 )
-def registry_json_to_bin(input_file: Path, output_path: Path | None, file_byte_order=sys.byteorder):
+@click.option(
+    "json_filter",
+    "--filter",
+    type=click.Path(exists=True, dir_okay=False, file_okay=True, readable=True, resolve_path=True, path_type=Path),
+    default=None
+)
+def registry_json_to_bin(input_file: Path, output_path: Path | None, json_filter: Path | None, file_byte_order=sys.byteorder):
     if output_path is None:
         output_path = input_file.with_stem(input_file.stem + "_encoded").with_suffix(".bin")
 
     with input_file.open("r") as reader:
         registry = load_registry_from_json(json.load(reader))
+
+    if json_filter:
+        registry = apply_json_filter(registry, json_filter)
 
     with output_path.open("wb") as writer:
         binaries = BinaryWriter(writer, file_byte_order)

@@ -3,6 +3,7 @@ import logging
 import click
 
 from hexviewer.read_asset_reg import registry_bin_to_json, registry_json_to_bin
+from hexviewer.merge_registries import merge_json_regs
 
 logger = logging.getLogger(__name__)
 
@@ -27,3 +28,4 @@ def cli(verbosity: int):
 
 cli.add_command(registry_bin_to_json)
 cli.add_command(registry_json_to_bin)
+cli.add_command(merge_json_regs)

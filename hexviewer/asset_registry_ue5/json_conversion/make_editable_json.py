@@ -1,6 +1,6 @@
 import logging
-from binascii import hexlify, unhexlify
 from typing import Callable
+import base64
 
 from hexviewer.asset_registry_ue5.data_store_reader import DataStore
 from hexviewer.asset_registry_ue5.json_conversion.name_resolver import NameResolver
@@ -12,6 +12,9 @@ from hexviewer.asset_registry_ue5.types.registry import AssetData, AssetRegistry
 from hexviewer.asset_registry_ue5.unreal_types import SerializedString
 
 logger = logging.getLogger(__name__)
+
+def b64string(bytestring: bytes) -> str:
+    return base64.b64encode(bytestring).decode("utf_8")
 
 
 def header_to_json(header):
@@ -103,13 +106,13 @@ def dependencies_to_json(dependencies: list[Dependency], name_resolver: NameReso
         dep_out = {
             "AssetIdentifier": name_resolver.resolve_asset_identifier(dependency.identifier),
             "PackageDependencies": [hex(node_idx) for node_idx in dependency.package_deps],
-            "PackageDepFlags": dependency.package_dep_flags,
+            "PackageDepFlags": b64string(dependency.package_dep_flags),
             "NameDependencies": [hex(node_idx) for node_idx in dependency.name_deps],
-            "NameDepFlags": dependency.name_dep_flags,
+            "NameDepFlags": b64string(dependency.name_dep_flags),
             "ManageDependencies": [hex(node_idx) for node_idx in dependency.manage_deps],
-            "ManageDepFlags": dependency.manage_dep_flags,
+            "ManageDepFlags": b64string(dependency.manage_dep_flags),
             "Referencers": [hex(node_idx) for node_idx in dependency.referencers],
-            "ReferencerFlags": dependency.referencer_flags,
+            "ReferencerFlags": b64string(dependency.referencer_flags),
         }
         dependencies_out.append(dep_out)
 
@@ -124,9 +127,9 @@ def packages_to_json(packages: list[PackageData], name_resolver:NameResolver):
             "Key": name_resolver.resolve_fname(package.key),
             "ByteSize": package.size_on_disk,
             "GUID": package.guid,
-            "CookedHash": package.cooked_hash,
+            "CookedHash": b64string(package.cooked_hash),
             "ChunkHashes": [
-                {"ChunkID": chunk_id, "ChunkHash": chunk_hash}
+                {"ChunkID": b64string(chunk_id), "ChunkHash": b64string(chunk_hash)}
                 for chunk_id, chunk_hash in package.chunk_hashes
             ],
             "UE4Version": package.ue4_ver,

@@ -9,14 +9,21 @@ such as the registry using the serialization version 17, or there being no depen
 
 run `poetry install` to make the commands available
 
-`poetry asset_reg <subcommand>` is the actual command; with the subcommands `bin_to_json` and `json_to_bin`
+`poetry run asset_reg <subcommand>` is the actual command; with the subcommands `bin_to_json` and `json_to_bin`
 both taking a source file and allowing an optional output file with the `-o` option.
+The `--filter` option allows one to input a file containing a [JMESPath](https://jmespath.org/) expression to transform the Json input/output.
+This can be used to extract assets with particular chunkIDs for example.
+Since the transformation is pretty much arbitrary, you can produce output that cannot be parsed by this tool anymore,
+so make sure to not overwrite your original files.
+
+The `merge_json_regs` subcommand takes several json files as input and merges the contained asset entries.
+Files are applied in order, with asset entries of the same `PackageName.AssetName` being overwritten.
 
 The editable json wraps all tag values of assets in a type marker, taking the form of the typename,
 followed by the actual value in round brackets.
 
 ## Tag types
-*NOTE: When converting back into binary the tag types are currently not scrutinized, so make sure to use the right one.*
+*NOTE: When converting back into binary the tag types do not get validated, so make sure to use the right one.*
 - `ANSI` / `WIDE`: most values are saved as string, ANSI being normal ASCII and WIDE anything that has characters outside that range
 - `TEXT`
 - `NAME` / `NAME__NO_NUM`: FName, with or without instance number respectively
